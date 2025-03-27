@@ -1,5 +1,7 @@
 package domain
 
+const ConfigFile = ".ghissuescli"
+
 type Config struct {
 	Token      string `json:"token"`
 	Owner      string `json:"owner"`
