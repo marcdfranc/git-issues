@@ -1,15 +1,18 @@
-package issue
+package util
 
 import (
 	"fmt"
-	"git-issues/domain"
 	"os"
 	"os/exec"
 	"runtime"
 	"strings"
+
+	"git-issues/domain"
 )
 
-func getIssueContentFromEditor(config *domain.Config, initialTitle, initialBody string) (string, string, error) {
+var goos = runtime.GOOS
+
+func GetIssueContentFromEditor(config *domain.Config, initialTitle, initialBody string) (string, string, error) {
 	tempFile, err := os.CreateTemp("", "ghissue-*.md")
 	if err != nil {
 		return "", "", fmt.Errorf("could not create temp file: %v", err)
@@ -17,18 +20,20 @@ func getIssueContentFromEditor(config *domain.Config, initialTitle, initialBody 
 	defer os.Remove(tempFile.Name())
 
 	content := fmt.Sprintf("%s\n\n%s", initialTitle, initialBody)
-	if _, err := tempFile.WriteString(content); err != nil {
+	_, err = tempFile.WriteString(content)
+	if err != nil {
 		return "", "", fmt.Errorf("could not write temp file: %v", err)
 	}
 	tempFile.Close()
 
-	editor := getEditor(config)
+	editor := GetEditor(config)
 	cmd := exec.Command(editor, tempFile.Name())
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	if err := cmd.Run(); err != nil {
+	err = cmd.Run()
+	if err != nil {
 		return "", "", fmt.Errorf("error on exec text editor: %v", err)
 	}
 
@@ -47,7 +52,7 @@ func getIssueContentFromEditor(config *domain.Config, initialTitle, initialBody 
 	return title, body, nil
 }
 
-func getEditor(config *domain.Config) string {
+func GetEditor(config *domain.Config) string {
 	if config.Editor != "" {
 		return config.Editor
 	}
@@ -57,7 +62,7 @@ func getEditor(config *domain.Config) string {
 	}
 
 	// Default editors per OS
-	if runtime.GOOS == "windows" {
+	if goos == "windows" {
 		return "notepad"
 	}
 	return "vi"
