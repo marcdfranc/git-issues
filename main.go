@@ -1,4 +1,4 @@
-package git_issues
+package main
 
 import (
 	"fmt"
@@ -16,6 +16,12 @@ func main() {
 		help.PrintHelp()
 		return
 	}
+	command := os.Args[1]
+
+	if command == "init" {
+		conf.InitConfig()
+		return
+	}
 
 	config, err := application.LoadConfig()
 	if err != nil {
@@ -24,12 +30,11 @@ func main() {
 		return
 	}
 
-	command := os.Args[1]
 	switch command {
-	case "init":
-		conf.InitConfig()
 	case "create":
 		issue.Create(config)
+	case "list":
+		issue.List(config)
 	default:
 		fmt.Printf("command not found: %s\n", command)
 		help.PrintHelp()
