@@ -6,10 +6,11 @@ import (
 
 	"git-issues/client"
 	"git-issues/domain"
+	"git-issues/util"
 )
 
 func Create(config *domain.Config) {
-	title, body, err := getIssueContentFromEditor(config, "", "")
+	title, body, err := util.GetIssueContentFromEditor(config, "", "")
 	if err != nil {
 		fmt.Printf("could not edit issue: %v\n", err)
 		return
