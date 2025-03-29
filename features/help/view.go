@@ -9,7 +9,7 @@ Usage:
   ghissues <comand> [args]
 
 Commands:
-  init       config the app
+  init       conf the app
   create     Create a new issue
   list       List all issues
   view <n>   View the issue number n
