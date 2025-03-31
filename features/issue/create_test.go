@@ -9,7 +9,7 @@ import (
 	"testing"
 
 	"git-issues/domain"
-	"git-issues/util"
+	"git-issues/service/editor"
 )
 
 // MockGitHubAPI cria um servidor de teste para simular a API do GitHub
@@ -105,9 +105,9 @@ func TestCreate(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Substitui a função original pelo mock
-			oldEditor := util.GetIssueContentFromEditor
-			defer func() { util.GetIssueContentFromEditor = oldEditor }()
-			util.GetIssueContentFromEditor = tt.mockEditor.GetIssueContentFromEditor
+			oldEditor := editor.GetIssueContentFromEditor
+			defer func() { editor.GetIssueContentFromEditor = oldEditor }()
+			editor.GetIssueContentFromEditor = tt.mockEditor.GetIssueContentFromEditor
 
 			// Configura o servidor mock se necessário
 			var server *httptest.Server

@@ -13,10 +13,20 @@ import (
 
 const apiBaseUrl = "https://api.github.com"
 
-type FileWriter func(filename string, data []byte, perm os.FileMode) error
+type Feature struct {
+	reader    io.Reader
+	writeFile func(filename string, data []byte, perm os.FileMode) error
+}
 
-func initConfig(r io.Reader, writeFile FileWriter) error {
-	reader := bufio.NewReader(r)
+func New() *Feature {
+	return &Feature{
+		writeFile: os.WriteFile,
+		reader:    os.Stdin,
+	}
+}
+
+func (f *Feature) InitConfig() error {
+	reader := bufio.NewReader(f.reader)
 
 	fmt.Print("GitHub Personal Access Token: ")
 	token, err := reader.ReadString('\n')
@@ -59,18 +69,11 @@ func initConfig(r io.Reader, writeFile FileWriter) error {
 		return fmt.Errorf("could not generat conf: %w\n", err)
 	}
 
-	err = writeFile(domain.ConfigFile, configData, 0600)
+	err = f.writeFile(domain.ConfigFile, configData, 0600)
 	if err != nil {
 		return fmt.Errorf("could not save conf: %w\n", err)
 	}
 
 	fmt.Println("conf created with success!")
 	return nil
-}
-
-func InitConfig() {
-	err := initConfig(os.Stdin, os.WriteFile)
-	if err != nil {
-		fmt.Printf("could not init conf: %v\n", err)
-	}
 }

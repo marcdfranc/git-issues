@@ -33,8 +33,13 @@ func TestInitConfig(t *testing.T) {
 		APIBaseURL: apiBaseUrl,
 	}
 
+	ft := New()
+
+	ft.writeFile = fakeWriteFile
+	ft.reader = reader
+
 	// ACT
-	err := initConfig(reader, fakeWriteFile)
+	err := ft.InitConfig()
 	if err != nil {
 		t.Fatalf("Erro inesperado: %v", err)
 	}

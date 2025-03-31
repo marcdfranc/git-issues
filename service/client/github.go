@@ -12,7 +12,17 @@ import (
 	"git-issues/domain"
 )
 
-func MakeGitHubRequest(config *domain.Config, method, url string, data interface{}) ([]byte, error) {
+type Service struct {
+	config *domain.Config
+}
+
+func New(config *domain.Config) *Service {
+	return &Service{
+		config: config,
+	}
+}
+
+func (s *Service) MakeGitHubRequest(method, url string, data interface{}) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -30,7 +40,7 @@ func MakeGitHubRequest(config *domain.Config, method, url string, data interface
 		return nil, fmt.Errorf("error on request create: %v", err)
 	}
 
-	req.Header.Set("Authorization", "token "+config.Token)
+	req.Header.Set("Authorization", "token "+s.config.Token)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 	if data != nil {
 		req.Header.Set("Content-Type", "application/json")

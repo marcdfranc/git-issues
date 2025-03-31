@@ -1,4 +1,4 @@
-package util
+package editor
 
 import (
 	"fmt"
@@ -14,7 +14,6 @@ import (
 var osCreateTemp = os.CreateTemp
 
 func TestMain(m *testing.M) {
-
 	os.Exit(m.Run())
 }
 
@@ -43,7 +42,7 @@ func TestGetIssueContentFromEditor(t *testing.T) {
 
 	tests := []struct {
 		name         string
-		config       *domain.Config
+		service      *Service
 		initialTitle string
 		initialBody  string
 		mockContent  string
@@ -54,7 +53,7 @@ func TestGetIssueContentFromEditor(t *testing.T) {
 	}{
 		{
 			name:         "successful edit with title and body",
-			config:       &domain.Config{Editor: mockEditor},
+			service:      New(&domain.Config{Editor: mockEditor}),
 			initialTitle: "Test Title",
 			initialBody:  "Test Body",
 			mockContent:  "New Title\n\nNew Body",
@@ -65,7 +64,7 @@ func TestGetIssueContentFromEditor(t *testing.T) {
 		},
 		{
 			name:         "successful edit with title only",
-			config:       &domain.Config{Editor: mockEditor},
+			service:      New(&domain.Config{Editor: mockEditor}),
 			initialTitle: "Test Title",
 			initialBody:  "",
 			mockContent:  "New Title Only",
@@ -76,7 +75,7 @@ func TestGetIssueContentFromEditor(t *testing.T) {
 		},
 		{
 			name:         "error when editor fails",
-			config:       &domain.Config{Editor: "/non/existent/editor"},
+			service:      New(&domain.Config{Editor: "/non/existent/editor"}),
 			initialTitle: "Test",
 			initialBody:  "Test",
 			wantErr:      true,
@@ -95,7 +94,7 @@ func TestGetIssueContentFromEditor(t *testing.T) {
 			}
 
 			// ACT
-			gotTitle, gotBody, err := GetIssueContentFromEditor(tt.config, tt.initialTitle, tt.initialBody)
+			gotTitle, gotBody, err := tt.service.GetIssueContentFromEditor(tt.initialTitle, tt.initialBody)
 
 			// ASSERT
 			if (err != nil) != tt.wantErr {
@@ -121,29 +120,29 @@ func TestGetEditorSuccess(t *testing.T) {
 
 	// ARRANGE
 	tests := []struct {
-		name   string
-		config *domain.Config
-		goos   string
-		want   string
+		name    string
+		service *Service
+		goos    string
+		want    string
 	}{
 		{
-			name:   "default windows success",
-			config: &domain.Config{},
-			goos:   "windows",
-			want:   "notepad",
+			name:    "default windows success",
+			service: New(&domain.Config{}),
+			goos:    "windows",
+			want:    "notepad",
 		},
 		{
-			name:   "default unix success",
-			goos:   "linux",
-			config: &domain.Config{},
-			want:   "vi",
+			name:    "default unix success",
+			goos:    "linux",
+			service: New(&domain.Config{}),
+			want:    "vi",
 		},
 		{
 			name: "editor set success",
 			goos: "windows",
-			config: &domain.Config{
+			service: New(&domain.Config{
 				Editor: "notepad++",
-			},
+			}),
 			want: "notepad++",
 		},
 	}
@@ -152,7 +151,7 @@ func TestGetEditorSuccess(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			goos = tt.goos
 			// ACT
-			got := GetEditor(tt.config)
+			got := tt.service.getEditor()
 
 			// ASSERT
 			if got != tt.want {
