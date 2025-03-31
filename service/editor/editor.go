@@ -1,4 +1,4 @@
-package util
+package editor
 
 import (
 	"fmt"
@@ -10,9 +10,23 @@ import (
 	"git-issues/domain"
 )
 
+type Editor interface {
+	GetIssueContentFromEditor(initialTitle, initialBody string) (string, string, error)
+}
+
+type Service struct {
+	config *domain.Config
+}
+
+func New(config *domain.Config) *Service {
+	return &Service{
+		config: config,
+	}
+}
+
 var goos = runtime.GOOS
 
-func GetIssueContentFromEditor(config *domain.Config, initialTitle, initialBody string) (string, string, error) {
+func (s *Service) GetIssueContentFromEditor(initialTitle, initialBody string) (string, string, error) {
 	tempFile, err := os.CreateTemp("", "ghissue-*.md")
 	if err != nil {
 		return "", "", fmt.Errorf("could not create temp file: %v", err)
@@ -26,7 +40,7 @@ func GetIssueContentFromEditor(config *domain.Config, initialTitle, initialBody 
 	}
 	tempFile.Close()
 
-	editor := GetEditor(config)
+	editor := s.getEditor()
 	cmd := exec.Command(editor, tempFile.Name())
 	cmd.Stdin = os.Stdin
 	cmd.Stdout = os.Stdout
@@ -52,9 +66,9 @@ func GetIssueContentFromEditor(config *domain.Config, initialTitle, initialBody 
 	return title, body, nil
 }
 
-func GetEditor(config *domain.Config) string {
-	if config.Editor != "" {
-		return config.Editor
+func (s *Service) getEditor() string {
+	if s.config.Editor != "" {
+		return s.config.Editor
 	}
 
 	if editor := os.Getenv("EDITOR"); editor != "" {

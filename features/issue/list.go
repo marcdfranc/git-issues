@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"git-issues/client"
 	"git-issues/domain"
+	"git-issues/service/client"
 )
 
 func List(config *domain.Config) {

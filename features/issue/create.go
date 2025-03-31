@@ -4,13 +4,25 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"git-issues/client"
 	"git-issues/domain"
-	"git-issues/util"
+	"git-issues/service/client"
+	"git-issues/service/editor"
 )
 
-func Create(config *domain.Config) {
-	title, body, err := util.GetIssueContentFromEditor(config, "", "")
+type Feature struct {
+	config *domain.Config
+	editor editor.Editor
+}
+
+func New(config *domain.Config, editor editor.Editor) *Feature {
+	return &Feature{
+		config: config,
+		editor: editor,
+	}
+}
+
+func (f *Feature) Create() {
+	title, body, err := f.editor.GetIssueContentFromEditor("", "")
 	if err != nil {
 		fmt.Printf("could not edit issue: %v\n", err)
 		return
@@ -26,8 +38,8 @@ func Create(config *domain.Config) {
 		Body:  body,
 	}
 
-	url := fmt.Sprintf("%s/repos/%s/%s/issues", config.APIBaseURL, config.Owner, config.Repo)
-	response, err := client.MakeGitHubRequest(config, "POST", url, issue)
+	url := fmt.Sprintf("%s/repos/%s/%s/issues", f.config.APIBaseURL, f.config.Owner, f.config.Repo)
+	response, err := client.MakeGitHubRequest(f.config, "POST", url, issue)
 	if err != nil {
 		fmt.Printf("Could not create issue: %v\n", err)
 		return
