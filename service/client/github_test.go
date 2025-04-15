@@ -23,7 +23,7 @@ func TestMakeGitHubRequest_Success(t *testing.T) {
 	// Mock HTTP server
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		_, _ = w.Write(want)
+		w.Write(want)
 	})
 	server := httptest.NewServer(handler)
 	defer server.Close()
@@ -48,7 +48,7 @@ func TestMakeGitHubRequest_Errors(t *testing.T) {
 	// Arrange
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		_, _ = w.Write([]byte(`{"message":"bad request"}`))
+		w.Write([]byte(`{"message":"bad request"}`))
 	})
 	server := httptest.NewServer(handler)
 	defer server.Close()
