@@ -4,12 +4,21 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"time"
 
 	"git-issues/domain"
+)
+
+var (
+	errEncoding      = errors.New("encoding error")
+	errRequest       = errors.New("request error")
+	errApi           = errors.New("api error")
+	errCreateRequest = errors.New("create request error")
+	errStr           = "error on MakeGitHubRequest: %s"
 )
 
 type Service struct {
@@ -31,13 +40,15 @@ func (s *Service) MakeGitHubRequest(method, url string, data interface{}) ([]byt
 		var err error
 		reqBody, err = json.Marshal(data)
 		if err != nil {
-			return nil, fmt.Errorf("encoding error: %v", err)
+			err = fmt.Errorf(errStr, err)
+			return nil, errors.Join(err, errEncoding)
 		}
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(reqBody))
 	if err != nil {
-		return nil, fmt.Errorf("error on request create: %v", err)
+		err = fmt.Errorf(errStr, err)
+		return nil, errors.Join(err, errCreateRequest)
 	}
 
 	req.Header.Set("Authorization", "token "+s.config.Token)
@@ -49,21 +60,23 @@ func (s *Service) MakeGitHubRequest(method, url string, data interface{}) ([]byt
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("error on send request: %v", err)
+		err = fmt.Errorf(errStr, err)
+		return nil, errors.Join(errRequest, err)
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return nil, fmt.Errorf("erro on read response: %v", err)
+		return nil, fmt.Errorf(errStr, err)
 	}
 
 	if resp.StatusCode >= 400 {
 		var errorResponse struct {
 			Message string `json:"message"`
 		}
-		json.Unmarshal(body, &errorResponse)
-		return nil, fmt.Errorf("GitHub api error (%d): %s", resp.StatusCode, errorResponse.Message)
+		err = json.Unmarshal(body, &errorResponse)
+		err = fmt.Errorf("GitHub api error Status:%d\n response error: %s", resp.StatusCode, errorResponse.Message)
+		return nil, errors.Join(err, errApi)
 	}
 
 	return body, nil
