@@ -21,17 +21,21 @@ var (
 	errStr           = "error on MakeGitHubRequest: %s"
 )
 
-type Service struct {
+type Client interface {
+	MakeRequest(method, url string, data interface{}) ([]byte, error)
+}
+
+type GitHubClient struct {
 	config *domain.Config
 }
 
-func New(config *domain.Config) *Service {
-	return &Service{
+func New(config *domain.Config) *GitHubClient {
+	return &GitHubClient{
 		config: config,
 	}
 }
 
-func (s *Service) MakeGitHubRequest(method, url string, data interface{}) ([]byte, error) {
+func (c *GitHubClient) MakeRequest(method, url string, data interface{}) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -51,7 +55,7 @@ func (s *Service) MakeGitHubRequest(method, url string, data interface{}) ([]byt
 		return nil, errors.Join(err, errCreateRequest)
 	}
 
-	req.Header.Set("Authorization", "token "+s.config.Token)
+	req.Header.Set("Authorization", "token "+c.config.Token)
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 	if data != nil {
 		req.Header.Set("Content-Type", "application/json")

@@ -9,19 +9,19 @@ import (
 	"git-issues/service/editor"
 )
 
-type Feature struct {
+type Create struct {
 	config *domain.Config
 	editor editor.Editor
 }
 
-func New(config *domain.Config, editor editor.Editor) *Feature {
-	return &Feature{
+func NewCreate(editor editor.Editor, config *domain.Config) *Create {
+	return &Create{
 		config: config,
 		editor: editor,
 	}
 }
 
-func (f *Feature) Create() {
+func (f *Create) Create() {
 	title, body, err := f.editor.GetIssueContentFromEditor("", "")
 	if err != nil {
 		fmt.Printf("could not edit issue: %v\n", err)

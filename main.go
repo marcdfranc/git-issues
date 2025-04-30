@@ -12,6 +12,8 @@ import (
 )
 
 func main() {
+	c := conf.New()
+
 	if len(os.Args) < 2 {
 		help.PrintHelp()
 		return
@@ -19,22 +21,22 @@ func main() {
 	command := os.Args[1]
 
 	if command == "init" {
-		conf.InitConfig()
+		c.Init()
 		return
 	}
 
-	config, err := application.LoadConfig()
+	config, err := c.GetConfig()
 	if err != nil {
-		fmt.Printf("could not load conf: %v\n", err)
+		fmt.Println(err)
 		fmt.Println("please run 'git_issues init' to configure.")
 		return
 	}
 
 	switch command {
+	case "list":
+		issue.ListFeature(config)
 	case "create":
 		issue.Create(config)
-	case "list":
-		issue.List(config)
 	default:
 		fmt.Printf("command not found: %s\n", command)
 		help.PrintHelp()

@@ -2,34 +2,58 @@ package issue
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
+	"net/http"
 
 	"git-issues/domain"
 	"git-issues/service/client"
 )
 
-func List(config *domain.Config) {
-	url := fmt.Sprintf("%s/repos/%s/%s/issues", config.APIBaseURL, config.Owner, config.Repo)
-	response, err := client.MakeGitHubRequest(config, "GET", url, nil)
+const (
+	strUrlListFormat = "%s/repos/%s/%s/issues"
+)
+
+var (
+	errRequest      = errors.New("request error")
+	errReadResponse = errors.New("read response error")
+	errNotFound     = errors.New("not found")
+)
+
+type List interface {
+	GetIssues() []domain.Issue
+}
+
+type ListFeature struct {
+	client client.Client
+	url    string
+}
+
+func NewList(client client.Client, config *domain.Config) *ListFeature {
+	f := &ListFeature{
+		client: client,
+	}
+	f.url = fmt.Sprintf(strUrlListFormat, config.APIBaseURL, config.Owner, config.Repo)
+	return f
+}
+
+func (f *ListFeature) Get() ([]map[string]interface{}, error) {
+	response, err := f.client.MakeRequest(http.MethodGet, f.url, nil)
 	if err != nil {
-		fmt.Printf("request error: %v\n", err)
-		return
+		err = errors.Join(err, errRequest)
+		return nil, err
 	}
 
 	var issues []map[string]interface{}
 	err = json.Unmarshal(response, &issues)
 	if err != nil {
-		fmt.Printf("read body error: %v\n", err)
-		return
+		err = errors.Join(err, errReadResponse)
+		return nil, err
 	}
 
 	if len(issues) == 0 {
-		fmt.Println("no issues found.")
-		return
+		return nil, errNotFound
 	}
 
-	fmt.Println("\nIssues:")
-	for _, issue := range issues {
-		fmt.Printf("#%v - %s (%s)\n", issue["number"], issue["title"], issue["state"])
-	}
+	return issues, nil
 }

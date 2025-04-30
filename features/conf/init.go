@@ -3,6 +3,7 @@ package conf
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,7 +14,17 @@ import (
 
 const apiBaseUrl = "https://api.github.com"
 
+type Conf interface {
+	Init() error
+	GetConfig() (*domain.Config, error)
+}
+
+var (
+	errReadConfig = errors.New("could not read config")
+)
+
 type Feature struct {
+	config    *domain.Config
 	reader    io.Reader
 	writeFile func(filename string, data []byte, perm os.FileMode) error
 }
@@ -25,7 +36,7 @@ func New() *Feature {
 	}
 }
 
-func (f *Feature) InitConfig() error {
+func (f *Feature) Init() error {
 	reader := bufio.NewReader(f.reader)
 
 	fmt.Print("GitHub Personal Access Token: ")
@@ -76,4 +87,30 @@ func (f *Feature) InitConfig() error {
 
 	fmt.Println("conf created with success!")
 	return nil
+}
+
+func (f *Feature) GetConfig() (*domain.Config, error) {
+	if f.config != nil {
+		return f.config, nil
+	}
+	var err error
+	f.config, err = loadConfig()
+	return f.config, err
+}
+
+func loadConfig() (*domain.Config, error) {
+	data, err := os.ReadFile(domain.ConfigFile)
+	if err != nil {
+		err = errors.Join(errReadConfig, err)
+		return nil, err
+	}
+
+	var config domain.Config
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		err = errors.Join(errReadConfig, err)
+		return nil, err
+	}
+
+	return &config, nil
 }

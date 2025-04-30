@@ -28,12 +28,12 @@ func TestMakeGitHubRequest_Success(t *testing.T) {
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
-	service := New(defaultConfig)
+	client := New(defaultConfig)
 
 	data := map[string]string{"example": "value"}
 
 	// Act
-	got, err := service.MakeGitHubRequest(http.MethodPost, server.URL, data)
+	got, err := client.MakeRequest(http.MethodPost, server.URL, data)
 
 	// Assert
 	if err != nil {
@@ -93,12 +93,12 @@ func TestMakeGitHubRequest_Errors(t *testing.T) {
 		},
 	}
 
-	service := New(defaultConfig)
+	client := New(defaultConfig)
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Act
-			_, got := service.MakeGitHubRequest(tt.args.method, tt.args.url, tt.args.data)
+			_, got := client.MakeRequest(tt.args.method, tt.args.url, tt.args.data)
 
 			// Assert
 			if !errors.Is(got, tt.want) {

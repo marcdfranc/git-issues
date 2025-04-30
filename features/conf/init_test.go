@@ -39,7 +39,7 @@ func TestInitConfig(t *testing.T) {
 	ft.reader = reader
 
 	// ACT
-	err := ft.InitConfig()
+	err := ft.Init()
 	if err != nil {
 		t.Fatalf("Erro inesperado: %v", err)
 	}
