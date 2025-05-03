@@ -46,8 +46,7 @@ func TestGetIssueContentFromEditor(t *testing.T) {
 		initialTitle string
 		initialBody  string
 		mockContent  string
-		wantTitle    string
-		wantBody     string
+		wantResponse domain.Issue
 		wantErr      bool
 		setup        func()
 	}{
@@ -57,10 +56,12 @@ func TestGetIssueContentFromEditor(t *testing.T) {
 			initialTitle: "Test Title",
 			initialBody:  "Test Body",
 			mockContent:  "New Title\n\nNew Body",
-			wantTitle:    "New Title",
-			wantBody:     "New Body",
-			wantErr:      false,
-			setup:        func() { setupMockEditor("New Title\n\nNew Body") },
+			wantResponse: domain.Issue{
+				Title: "New Title",
+				Body:  "New Body",
+			},
+			wantErr: false,
+			setup:   func() { setupMockEditor("New Title\n\nNew Body") },
 		},
 		{
 			name:         "successful edit with title only",
@@ -68,10 +69,12 @@ func TestGetIssueContentFromEditor(t *testing.T) {
 			initialTitle: "Test Title",
 			initialBody:  "",
 			mockContent:  "New Title Only",
-			wantTitle:    "New Title Only",
-			wantBody:     "",
-			wantErr:      false,
-			setup:        func() { setupMockEditor("New Title Only") },
+			wantResponse: domain.Issue{
+				Title: "New Title Only",
+				Body:  "",
+			},
+			wantErr: false,
+			setup:   func() { setupMockEditor("New Title Only") },
 		},
 		{
 			name:         "error when editor fails",
@@ -94,7 +97,7 @@ func TestGetIssueContentFromEditor(t *testing.T) {
 			}
 
 			// ACT
-			gotTitle, gotBody, err := tt.service.GetIssueContentFromEditor(tt.initialTitle, tt.initialBody)
+			got, err := tt.service.GetIssueContentFromEditor(tt.initialTitle, tt.initialBody)
 
 			// ASSERT
 			if (err != nil) != tt.wantErr {
@@ -103,12 +106,10 @@ func TestGetIssueContentFromEditor(t *testing.T) {
 			}
 
 			if !tt.wantErr {
-				if gotTitle != tt.wantTitle {
-					t.Errorf("expected title = %q, got %q", tt.wantTitle, gotTitle)
+				if got != tt.wantResponse {
+					t.Errorf("expected response = %q, got %q", tt.wantResponse, got)
 				}
-				if gotBody != tt.wantBody {
-					t.Errorf("expected body = %q, got %q", tt.wantBody, gotBody)
-				}
+
 			}
 		})
 	}

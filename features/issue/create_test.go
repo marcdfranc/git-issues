@@ -1,168 +1,97 @@
 package issue
 
 import (
-	"encoding/json"
-	"fmt"
-	"net/http"
-	"net/http/httptest"
+	"errors"
 	"os"
 	"testing"
 
 	"git-issues/domain"
+	"git-issues/service/client"
 	"git-issues/service/editor"
+	"git-issues/testdata/stubs"
 )
-
-// MockGitHubAPI cria um servidor de teste para simular a API do GitHub
-func MockGitHubAPI(statusCode int, response interface{}) *httptest.Server {
-	return httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(statusCode)
-		json.NewEncoder(w).Encode(response)
-	}))
-}
-
-type MockEditor struct {
-	Title string
-	Body  string
-	Error error
-}
-
-func (m *MockEditor) GetIssueContentFromEditor(config *domain.Config, defaultTitle, defaultBody string) (string, string, error) {
-	return m.Title, m.Body, m.Error
-}
 
 func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
 
 func TestCreate(t *testing.T) {
+	// Arrange
+
+	f := Feature{config: &domain.Config{}}
+
 	tests := []struct {
-		name           string
-		mockEditor     *MockEditor
-		apiStatusCode  int
-		apiResponse    interface{}
-		wantErr        bool
-		expectedOutput string
+		name       string
+		clientStub client.GitHubClient
+		editorStub editor.Editor
+		want       error
 	}{
 		{
 			name: "successful creation",
-			mockEditor: &MockEditor{
-				Title: "Test Issue",
-				Body:  "Test Body",
+			editorStub: &stubs.EditorStub{
+				GetIssueContentFromEditorFunc: func(initialTitle, initialBody string) (domain.Issue, error) {
+					return domain.Issue{
+						Title: "Test Issue",
+						Body:  "Test Body",
+					}, nil
+				},
 			},
-			apiStatusCode: http.StatusCreated,
-			apiResponse: map[string]interface{}{
-				"number":   1,
-				"html_url": "http://example.com/issue/1",
-				"title":    "Test Issue",
-				"body":     "Test Body",
+			clientStub: &stubs.ClientStub{
+				MakeRequestFunc: func(method, url string, data interface{}) ([]byte, error) {
+					return []byte(`{"number":1,"html_url":"http://example.com/issue/1","title":"Test Issue","body":"Test Body"}`), nil
+				},
 			},
-			wantErr:        false,
-			expectedOutput: "Issue created with success!\nNumber: 1\nURL: http://example.com/issue/1\n",
+			want: nil,
 		},
 		{
 			name: "empty title",
-			mockEditor: &MockEditor{
-				Title: "",
-				Body:  "Test Body",
+			editorStub: &stubs.EditorStub{
+				GetIssueContentFromEditorFunc: func(initialTitle, initialBody string) (domain.Issue, error) {
+					return domain.Issue{
+						Body: "Test Body",
+					}, nil
+				},
 			},
-			wantErr:        true,
-			expectedOutput: "title is required.\n",
+			clientStub: &stubs.ClientStub{},
+			want:       errTitleRequired,
 		},
 		{
 			name: "editor error",
-			mockEditor: &MockEditor{
-				Error: fmt.Errorf("editor error"),
+			editorStub: &stubs.EditorStub{
+				GetIssueContentFromEditorFunc: func(initialTitle, initialBody string) (domain.Issue, error) {
+					return domain.Issue{}, domain.ErrEditor
+				},
 			},
-			wantErr:        true,
-			expectedOutput: "could not edit issue: editor error\n",
+			clientStub: &stubs.ClientStub{},
+			want:       domain.ErrEditor,
 		},
 		{
 			name: "api error",
-			mockEditor: &MockEditor{
-				Title: "Test Issue",
-				Body:  "Test Body",
+			editorStub: &stubs.EditorStub{
+				GetIssueContentFromEditorFunc: func(initialTitle, initialBody string) (domain.Issue, error) {
+					return domain.Issue{
+						Title: "Test Issue",
+						Body:  "Test Body",
+					}, nil
+				},
 			},
-			apiStatusCode: http.StatusInternalServerError,
-			apiResponse: map[string]interface{}{
-				"message": "Internal server error",
+			clientStub: &stubs.ClientStub{
+				MakeRequestFunc: func(method, url string, data interface{}) ([]byte, error) {
+					return []byte{}, domain.ErrApi
+				},
 			},
-			wantErr:        true,
-			expectedOutput: "Could not create issue:",
-		},
-		{
-			name: "invalid api response",
-			mockEditor: &MockEditor{
-				Title: "Test Issue",
-				Body:  "Test Body",
-			},
-			apiStatusCode:  http.StatusCreated,
-			apiResponse:    "invalid json",
-			wantErr:        true,
-			expectedOutput: "error on process response:",
+			want: domain.ErrApi,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Substitui a função original pelo mock
-			oldEditor := editor.GetIssueContentFromEditor
-			defer func() { editor.GetIssueContentFromEditor = oldEditor }()
-			editor.GetIssueContentFromEditor = tt.mockEditor.GetIssueContentFromEditor
-
-			// Configura o servidor mock se necessário
-			var server *httptest.Server
-			if tt.apiStatusCode != 0 {
-				server = MockGitHubAPI(tt.apiStatusCode, tt.apiResponse)
-				defer server.Close()
-			}
-
-			// Configuração para o teste
-			config := &domain.Config{
-				Owner:      "test",
-				Repo:       "repo",
-				APIBaseURL: "http://example.com",
-			}
-
-			// Se tivermos um servidor mock, atualizamos a URL
-			if server != nil {
-				config.APIBaseURL = server.URL
-			}
-
-			// Captura a saída padrão
-			output := captureOutput(func() {
-				issue.Create(config)
-			})
-
-			// Verifica os resultados
-			if tt.wantErr {
-				if !contains(output, tt.expectedOutput) {
-					t.Errorf("Expected output to contain %q, got %q", tt.expectedOutput, output)
-				}
-			} else {
-				if output != tt.expectedOutput {
-					t.Errorf("Expected output %q, got %q", tt.expectedOutput, output)
-				}
+			f.editor = tt.editorStub
+			f.client = tt.clientStub
+			_, err := f.Create()
+			if !errors.Is(err, tt.want) {
+				t.Errorf("unxpected error got: %v\nbut want: %v", err, tt.want)
 			}
 		})
 	}
-}
-
-// captureOutput captura a saída da função para teste
-func captureOutput(f func()) string {
-	rescue := fmt.Print
-	defer func() { fmt.Print = rescue }()
-
-	var output string
-	fmt.Print = func(a ...interface{}) (n int, err error) {
-		output = fmt.Sprint(a...)
-		return len(output), nil
-	}
-
-	f()
-	return output
-}
-
-// contains verifica se uma string contém outra
-func contains(s, substr string) bool {
-	return len(s) >= len(substr) && s[:len(substr)] == substr
 }

@@ -2,6 +2,7 @@ package issue
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"git-issues/domain"
@@ -9,48 +10,56 @@ import (
 	"git-issues/service/editor"
 )
 
-type Feature struct {
-	config *domain.Config
-	editor editor.Editor
+var (
+	errTitleRequired = errors.New("title is required")
+	errBodyRequired  = errors.New("body is required")
+	errCreate        = errors.New("could not create issue")
+	errProcessing    = errors.New("error on process response")
+)
+
+type Create interface {
+	Create() error
 }
 
-func New(config *domain.Config, editor editor.Editor) *Feature {
+type Feature struct {
+	client client.GitHubClient
+	editor editor.Editor
+	config *domain.Config
+}
+
+func NewCreate(config *domain.Config, editor editor.Editor, client client.GitHubClient) *Feature {
 	return &Feature{
 		config: config,
 		editor: editor,
+		client: client,
 	}
 }
 
-func (f *Feature) Create() {
-	title, body, err := f.editor.GetIssueContentFromEditor("", "")
+func (f *Feature) Create() (string, error) {
+	issue, err := f.editor.GetIssueContentFromEditor("", "")
 	if err != nil {
-		fmt.Printf("could not edit issue: %v\n", err)
-		return
+		return "", errors.Join(err, domain.ErrEditor)
 	}
 
-	if title == "" {
-		fmt.Println("title is required.")
-		return
+	if issue.Title == "" {
+		return "", errTitleRequired
 	}
 
-	issue := domain.Issue{
-		Title: title,
-		Body:  body,
+	if issue.Body == "" {
+		return "", errBodyRequired
 	}
 
 	url := fmt.Sprintf("%s/repos/%s/%s/issues", f.config.APIBaseURL, f.config.Owner, f.config.Repo)
-	response, err := client.MakeGitHubRequest(f.config, "POST", url, issue)
+	response, err := f.client.MakeRequest("POST", url, issue)
 	if err != nil {
-		fmt.Printf("Could not create issue: %v\n", err)
-		return
+		return "", errors.Join(err, errCreate)
 	}
 
 	var result map[string]interface{}
 	err = json.Unmarshal(response, &result)
 	if err != nil {
-		fmt.Printf("error on process response: %v\n", err)
-		return
+		return "", errProcessing
 	}
 
-	fmt.Printf("Issue created with success!\nNumber: %v\nURL: %v\n", result["number"], result["html_url"])
+	return fmt.Sprintf("Issue created with success!\nNumber: %v\nURL: %v\n", result["number"], result["html_url"]), nil
 }
