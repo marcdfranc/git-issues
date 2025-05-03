@@ -7,6 +7,8 @@ import (
 	"git-issues/features/conf"
 	"git-issues/features/help"
 	"git-issues/features/issue"
+	"git-issues/service/client"
+	"git-issues/service/editor"
 
 	"os"
 )
@@ -16,10 +18,17 @@ func main() {
 		help.PrintHelp()
 		return
 	}
+
+	var err error
+	featureConfig := conf.New()
+
 	command := os.Args[1]
 
 	if command == "init" {
-		conf.InitConfig()
+		err = featureConfig.InitConfig()
+		if err != nil {
+			fmt.Printf("error on start the application: %v\n", err)
+		}
 		return
 	}
 
@@ -30,9 +39,19 @@ func main() {
 		return
 	}
 
+	var response string
+
+	textEditor := editor.New(config)
+	serviceClient := client.New(config)
+	create := issue.NewCreate(config, textEditor, serviceClient)
+
 	switch command {
 	case "create":
-		issue.Create(config)
+		response, err = create.Create()
+		if err != nil {
+			fmt.Printf("error on create issue: %v\n", err)
+		}
+		fmt.Println(response)
 	case "list":
 		issue.List(config)
 	default:

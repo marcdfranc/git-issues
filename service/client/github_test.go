@@ -33,7 +33,7 @@ func TestMakeGitHubRequest_Success(t *testing.T) {
 	data := map[string]string{"example": "value"}
 
 	// Act
-	got, err := service.MakeGitHubRequest(http.MethodPost, server.URL, data)
+	got, err := service.MakeRequest(http.MethodPost, server.URL, data)
 
 	// Assert
 	if err != nil {
@@ -71,7 +71,7 @@ func TestMakeGitHubRequest_Errors(t *testing.T) {
 				url:    "http://example.com",
 				data:   make(chan int),
 			},
-			want: errEncoding,
+			want: domain.ErrEncoding,
 		},
 		{
 			name: "when malformed request received",
@@ -80,7 +80,7 @@ func TestMakeGitHubRequest_Errors(t *testing.T) {
 				url:    "http://invalid.url", // malformed url
 				data:   nil,
 			},
-			want: errRequest,
+			want: domain.ErrRequest,
 		},
 		{
 			name: "when github api is down",
@@ -89,7 +89,7 @@ func TestMakeGitHubRequest_Errors(t *testing.T) {
 				url:    server.URL, // malformed url
 				data:   nil,
 			},
-			want: errApi,
+			want: domain.ErrApi,
 		},
 	}
 
@@ -98,7 +98,7 @@ func TestMakeGitHubRequest_Errors(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			// Act
-			_, got := service.MakeGitHubRequest(tt.args.method, tt.args.url, tt.args.data)
+			_, got := service.MakeRequest(tt.args.method, tt.args.url, tt.args.data)
 
 			// Assert
 			if !errors.Is(got, tt.want) {

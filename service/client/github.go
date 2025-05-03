@@ -14,12 +14,12 @@ import (
 )
 
 var (
-	errEncoding      = errors.New("encoding error")
-	errRequest       = errors.New("request error")
-	errApi           = errors.New("api error")
-	errCreateRequest = errors.New("create request error")
-	errStr           = "error on MakeGitHubRequest: %s"
+	errStr = "error on MakeRequest: %s"
 )
+
+type GitHubClient interface {
+	MakeRequest(method, url string, data interface{}) ([]byte, error)
+}
 
 type Service struct {
 	config *domain.Config
@@ -31,7 +31,7 @@ func New(config *domain.Config) *Service {
 	}
 }
 
-func (s *Service) MakeGitHubRequest(method, url string, data interface{}) ([]byte, error) {
+func (s *Service) MakeRequest(method, url string, data interface{}) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
@@ -41,14 +41,14 @@ func (s *Service) MakeGitHubRequest(method, url string, data interface{}) ([]byt
 		reqBody, err = json.Marshal(data)
 		if err != nil {
 			err = fmt.Errorf(errStr, err)
-			return nil, errors.Join(err, errEncoding)
+			return nil, errors.Join(err, domain.ErrEncoding)
 		}
 	}
 
 	req, err := http.NewRequestWithContext(ctx, method, url, bytes.NewBuffer(reqBody))
 	if err != nil {
 		err = fmt.Errorf(errStr, err)
-		return nil, errors.Join(err, errCreateRequest)
+		return nil, errors.Join(err, domain.ErrCreateRequest)
 	}
 
 	req.Header.Set("Authorization", "token "+s.config.Token)
@@ -61,7 +61,7 @@ func (s *Service) MakeGitHubRequest(method, url string, data interface{}) ([]byt
 	resp, err := client.Do(req)
 	if err != nil {
 		err = fmt.Errorf(errStr, err)
-		return nil, errors.Join(errRequest, err)
+		return nil, errors.Join(domain.ErrRequest, err)
 	}
 	defer resp.Body.Close()
 
@@ -76,7 +76,7 @@ func (s *Service) MakeGitHubRequest(method, url string, data interface{}) ([]byt
 		}
 		json.Unmarshal(body, &errorResponse)
 		err = fmt.Errorf("GitHub api error Status:%d\n response error: %s", resp.StatusCode, errorResponse.Message)
-		return nil, errors.Join(err, errApi)
+		return nil, errors.Join(err, domain.ErrApi)
 	}
 
 	return body, nil

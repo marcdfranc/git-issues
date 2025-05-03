@@ -11,7 +11,7 @@ import (
 )
 
 type Editor interface {
-	GetIssueContentFromEditor(initialTitle, initialBody string) (string, string, error)
+	GetIssueContentFromEditor(initialTitle, initialBody string) (domain.Issue, error)
 }
 
 type Service struct {
@@ -26,17 +26,17 @@ func New(config *domain.Config) *Service {
 
 var goos = runtime.GOOS
 
-func (s *Service) GetIssueContentFromEditor(initialTitle, initialBody string) (string, string, error) {
+func (s *Service) GetIssueContentFromEditor(initialTitle, initialBody string) (domain.Issue, error) {
 	tempFile, err := os.CreateTemp("", "ghissue-*.md")
 	if err != nil {
-		return "", "", fmt.Errorf("could not create temp file: %v", err)
+		return domain.Issue{}, fmt.Errorf("could not create temp file: %v", err)
 	}
 	defer os.Remove(tempFile.Name())
 
 	content := fmt.Sprintf("%s\n\n%s", initialTitle, initialBody)
 	_, err = tempFile.WriteString(content)
 	if err != nil {
-		return "", "", fmt.Errorf("could not write temp file: %v", err)
+		return domain.Issue{}, fmt.Errorf("could not write temp file: %v", err)
 	}
 	tempFile.Close()
 
@@ -48,22 +48,23 @@ func (s *Service) GetIssueContentFromEditor(initialTitle, initialBody string) (s
 
 	err = cmd.Run()
 	if err != nil {
-		return "", "", fmt.Errorf("error on exec text editor: %v", err)
+		return domain.Issue{}, fmt.Errorf("error on exec text editor: %v", err)
 	}
 
 	editedContent, err := os.ReadFile(tempFile.Name())
 	if err != nil {
-		return "", "", fmt.Errorf("error on read file: %v", err)
+		return domain.Issue{}, fmt.Errorf("error on read file: %v", err)
 	}
 
 	parts := strings.SplitN(string(editedContent), "\n", 2)
-	title := strings.TrimSpace(parts[0])
-	body := ""
+	response := domain.Issue{
+		Title: strings.TrimSpace(parts[0]),
+	}
 	if len(parts) > 1 {
-		body = strings.TrimSpace(parts[1])
+		response.Body = strings.TrimSpace(parts[1])
 	}
 
-	return title, body, nil
+	return response, nil
 }
 
 func (s *Service) getEditor() string {
