@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"git-issues/application"
+	"git-issues/domain"
 	"git-issues/features/conf"
 	"git-issues/features/help"
 	"git-issues/features/issue"
@@ -44,18 +45,31 @@ func main() {
 	textEditor := editor.New(config)
 	serviceClient := client.New(config)
 	create := issue.NewCreate(config, textEditor, serviceClient)
+	list := issue.NewList(config, serviceClient)
 
 	switch command {
 	case "create":
 		response, err = create.Create()
 		if err != nil {
 			fmt.Printf("error on create issue: %v\n", err)
+			return
 		}
 		fmt.Println(response)
 	case "list":
-		issue.List(config)
+		issues, err := list.List()
+		if err != nil {
+			fmt.Printf("error on list issues: %v\n", err)
+			return
+		}
+		displayIssues(issues)
 	default:
 		fmt.Printf("command not found: %s\n", command)
 		help.PrintHelp()
+	}
+}
+
+func displayIssues(issues []domain.Issue) {
+	for _, item := range issues {
+		fmt.Printf("#%v - %s (%s)\n", item.Number, item.Title, item.State)
 	}
 }
