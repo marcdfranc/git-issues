@@ -1,33 +1,41 @@
 package issue
 
 import (
+	"encoding/json"
 	"fmt"
 
 	"git-issues/domain"
+	"git-issues/service/client"
 )
 
-func List(config *domain.Config) {
-	//url := fmt.Sprintf("%s/repos/%s/%s/issues", config.APIBaseURL, config.Owner, config.Repo)
-	/*response, err := client.MakeGitHubRequest(config, "GET", url, nil)
+type ListIssue interface {
+	List() ([]domain.Issue, error)
+}
+
+type ListFeature struct {
+	config *domain.Config
+	client client.GitHubClient
+}
+
+func NewList(config *domain.Config, client client.GitHubClient) *ListFeature {
+	return &ListFeature{
+		config: config,
+		client: client,
+	}
+}
+
+func (f *ListFeature) List() ([]domain.Issue, error) {
+	url := fmt.Sprintf("%s/repos/%s/%s/issues", f.config.APIBaseURL, f.config.Owner, f.config.Repo)
+
+	response, err := f.client.MakeRequest("GET", url, nil)
 	if err != nil {
-		fmt.Printf("request error: %v\n", err)
-		return
+		return nil, err
 	}
 
-	var issues []map[string]interface{}
-	err = json.Unmarshal(response, &issues)
-	if err != nil {
-		fmt.Printf("read body error: %v\n", err)
-		return
+	issues := []domain.Issue{}
+	if err = json.Unmarshal(response, &issues); err != nil {
+		return nil, err
 	}
 
-	if len(issues) == 0 {
-		fmt.Println("no issues found.")
-		return
-	}*/
-
-	fmt.Println("\nIssues:")
-	/*for _, issue := range issues {
-		fmt.Printf("#%v - %s (%s)\n", issue["number"], issue["title"], issue["state"])
-	}*/
+	return issues, nil
 }

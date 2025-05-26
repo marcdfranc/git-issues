@@ -21,21 +21,21 @@ type Create interface {
 	Create() error
 }
 
-type Feature struct {
+type CreateFeature struct {
 	client client.GitHubClient
 	editor editor.Editor
 	config *domain.Config
 }
 
-func NewCreate(config *domain.Config, editor editor.Editor, client client.GitHubClient) *Feature {
-	return &Feature{
+func NewCreate(config *domain.Config, editor editor.Editor, client client.GitHubClient) *CreateFeature {
+	return &CreateFeature{
 		config: config,
 		editor: editor,
 		client: client,
 	}
 }
 
-func (f *Feature) Create() (string, error) {
+func (f *CreateFeature) Create() (string, error) {
 	issue, err := f.editor.GetIssueContentFromEditor("", "")
 	if err != nil {
 		return "", errors.Join(err, domain.ErrEditor)

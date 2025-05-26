@@ -18,7 +18,7 @@ func TestMain(m *testing.M) {
 func TestCreate(t *testing.T) {
 	// Arrange
 
-	f := Feature{config: &domain.Config{}}
+	f := CreateFeature{config: &domain.Config{}}
 
 	tests := []struct {
 		name       string
