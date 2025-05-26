@@ -10,13 +10,6 @@ import (
 	"git-issues/service/editor"
 )
 
-var (
-	errTitleRequired = errors.New("title is required")
-	errBodyRequired  = errors.New("body is required")
-	errCreate        = errors.New("could not create issue")
-	errProcessing    = errors.New("error on process response")
-)
-
 type Create interface {
 	Create() error
 }
@@ -36,7 +29,9 @@ func NewCreate(config *domain.Config, editor editor.Editor, client client.GitHub
 }
 
 func (f *CreateFeature) Create() (string, error) {
-	issue, err := f.editor.GetIssueContentFromEditor("", "")
+	issue := &domain.Issue{}
+
+	err := f.editor.GetIssueContentFromEditor(issue)
 	if err != nil {
 		return "", errors.Join(err, domain.ErrEditor)
 	}

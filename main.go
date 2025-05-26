@@ -2,9 +2,9 @@ package main
 
 import (
 	"fmt"
+	"strconv"
 
 	"git-issues/application"
-	"git-issues/domain"
 	"git-issues/features/conf"
 	"git-issues/features/help"
 	"git-issues/features/issue"
@@ -26,7 +26,7 @@ func main() {
 	command := os.Args[1]
 
 	if command == "init" {
-		err = featureConfig.InitConfig()
+		err = featureConfig.Init()
 		if err != nil {
 			fmt.Printf("error on start the application: %v\n", err)
 		}
@@ -45,7 +45,9 @@ func main() {
 	textEditor := editor.New(config)
 	serviceClient := client.New(config)
 	create := issue.NewCreate(config, textEditor, serviceClient)
+	update := issue.NewUpdate(config, textEditor, serviceClient)
 	list := issue.NewList(config, serviceClient)
+	w := os.Stdout
 
 	switch command {
 	case "create":
@@ -61,15 +63,34 @@ func main() {
 			fmt.Printf("error on list issues: %v\n", err)
 			return
 		}
-		displayIssues(issues)
+		err = issue.PrintIssues(w, issues)
+		if err != nil {
+			fmt.Printf("error on print issues: %v\n", err)
+			return
+		}
+
+	case "update":
+		if len(os.Args) < 3 {
+			fmt.Println("please provide an issue number")
+			return
+		}
+
+		number, err := strconv.Atoi(os.Args[2])
+		if err != nil {
+			fmt.Println("please provide a valid issue number")
+			return
+		}
+
+		err = update.Update(number)
+
+		if err != nil {
+			fmt.Printf("error on update issue: %v\n", err)
+			return
+		}
+		fmt.Println("issue updated")
+
 	default:
 		fmt.Printf("command not found: %s\n", command)
 		help.PrintHelp()
-	}
-}
-
-func displayIssues(issues []domain.Issue) {
-	for _, item := range issues {
-		fmt.Printf("#%v - %s (%s)\n", item.Number, item.Title, item.State)
 	}
 }
