@@ -34,7 +34,7 @@ func (f *ListFeature) List() ([]domain.Issue, error) {
 
 	issues := []domain.Issue{}
 	if err = json.Unmarshal(response, &issues); err != nil {
-		return nil, err
+		return nil, errProcessing
 	}
 
 	return issues, nil

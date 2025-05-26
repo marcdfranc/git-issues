@@ -11,7 +11,7 @@ const (
 	strIssueFormat = "#%v - %s (%s)\n"
 )
 
-func PrintIssues(w io.Writer, issues map[string]domain.Issue) error {
+func PrintIssues(w io.Writer, issues []domain.Issue) error {
 	_, err := fmt.Fprintln(w, "\nIssues:")
 	if err != nil {
 		return err

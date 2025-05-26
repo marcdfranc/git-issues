@@ -18,7 +18,7 @@ var (
 )
 
 type GitHubClient interface {
-	MakeRequest(method, url string, data interface{}) ([]byte, error)
+	MakeRequest(method, url string, data *domain.Issue) ([]byte, error)
 }
 
 type Service struct {
@@ -31,7 +31,7 @@ func New(config *domain.Config) *Service {
 	}
 }
 
-func (s *Service) MakeRequest(method, url string, data interface{}) ([]byte, error) {
+func (s *Service) MakeRequest(method, url string, data *domain.Issue) ([]byte, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 

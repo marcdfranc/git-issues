@@ -29,7 +29,7 @@ This feature is completed and can be used as follows.
 ## Commands
 
 - `init`: Configure the application
-- `create` (***in dev***): Creates a new issue (opens the editor to write title and body) 
+- `create`: Creates a new issue (opens the editor to write title and body) 
 - `list` (***in dev***): Lists all issues
 - `view <number>`: Shows the details of a specific issue
 - `update <number>` (***To Do***): Updates an existing issue
