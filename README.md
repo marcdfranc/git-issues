@@ -2,9 +2,9 @@
 
 This repository implements a Git issues client.
 
-This is a exercise proposed in "Go, The Programing Language" cap 4, exercise 11.
+This is an exercise proposed in "Go, The Programing Language" cap 4, exercise 11.
 
-The idea is create a CRUD for github issues in Go Lang
+The idea is creating a CRUD for GitHub issues in Go Lang
 
 ## Prerequisites
 
@@ -30,7 +30,7 @@ This feature is completed and can be used as follows.
 
 - `init`: Configure the application
 - `create`: Creates a new issue (opens the editor to write title and body) 
-- `list` (***in dev***): Lists all issues
+- `list`: Lists all issues
 - `view <number>`: Shows the details of a specific issue
-- `update <number>` (***To Do***): Updates an existing issue
-- `close <number>` (***To Do***): Closes an issue
+- `update <number>`: Updates an existing issue
+- `close <number>`: Closes an issue

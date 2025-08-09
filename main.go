@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	"git-issues/application"
@@ -10,8 +11,6 @@ import (
 	"git-issues/features/issue"
 	"git-issues/service/client"
 	"git-issues/service/editor"
-
-	"os"
 )
 
 func main() {
@@ -88,6 +87,47 @@ func main() {
 			return
 		}
 		fmt.Println("issue updated")
+
+	case "view":
+		if len(os.Args) < 3 {
+			fmt.Println("please provide an issue number")
+			return
+		}
+		number, err := strconv.Atoi(os.Args[2])
+		if err != nil {
+			fmt.Println("please provide a valid issue number")
+			return
+		}
+		view := issue.NewView(config, serviceClient)
+		issueData, err := view.View(number)
+		if err != nil {
+			fmt.Printf("error on view issue: %v\n", err)
+			return
+		}
+		err = issue.PrintIssue(w, issueData)
+		if err != nil {
+			fmt.Printf("error on print issue: %v\n", err)
+			return
+		}
+
+	case "close":
+		if len(os.Args) < 3 {
+			fmt.Println("please provide an issue number")
+			return
+		}
+		number, err := strconv.Atoi(os.Args[2])
+		if err != nil {
+			fmt.Println("please provide a valid issue number")
+			return
+		}
+
+		closer := issue.NewClose(config, serviceClient)
+		err = closer.Close(number)
+		if err != nil {
+			fmt.Printf("error on close issue: %v\n", err)
+			return
+		}
+		fmt.Println("issue closed successfully")
 
 	default:
 		fmt.Printf("command not found: %s\n", command)
