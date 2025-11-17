@@ -29,15 +29,14 @@ func TestCreate(t *testing.T) {
 		{
 			name: "successful creation",
 			editorStub: &stubs.EditorStub{
-				GetIssueContentFromEditorFunc: func(initialTitle, initialBody string) (domain.Issue, error) {
-					return domain.Issue{
-						Title: "Test Issue",
-						Body:  "Test Body",
-					}, nil
+				GetIssueContentFromEditorFunc: func(issue *domain.Issue) error {
+					issue.Title = "Test Issue"
+					issue.Body = "Test Body"
+					return nil
 				},
 			},
 			clientStub: &stubs.ClientStub{
-				MakeRequestFunc: func(method, url string, data interface{}) ([]byte, error) {
+				MakeRequestFunc: func(method, url string, data *domain.Issue) ([]byte, error) {
 					return []byte(`{"number":1,"html_url":"http://example.com/issue/1","title":"Test Issue","body":"Test Body"}`), nil
 				},
 			},
@@ -46,10 +45,9 @@ func TestCreate(t *testing.T) {
 		{
 			name: "empty title",
 			editorStub: &stubs.EditorStub{
-				GetIssueContentFromEditorFunc: func(initialTitle, initialBody string) (domain.Issue, error) {
-					return domain.Issue{
-						Body: "Test Body",
-					}, nil
+				GetIssueContentFromEditorFunc: func(issue *domain.Issue) error {
+					issue.Body = "Test Body"
+					return nil
 				},
 			},
 			clientStub: &stubs.ClientStub{},
@@ -58,8 +56,8 @@ func TestCreate(t *testing.T) {
 		{
 			name: "editor error",
 			editorStub: &stubs.EditorStub{
-				GetIssueContentFromEditorFunc: func(initialTitle, initialBody string) (domain.Issue, error) {
-					return domain.Issue{}, domain.ErrEditor
+				GetIssueContentFromEditorFunc: func(issue *domain.Issue) error {
+					return domain.ErrEditor
 				},
 			},
 			clientStub: &stubs.ClientStub{},
@@ -68,15 +66,14 @@ func TestCreate(t *testing.T) {
 		{
 			name: "api error",
 			editorStub: &stubs.EditorStub{
-				GetIssueContentFromEditorFunc: func(initialTitle, initialBody string) (domain.Issue, error) {
-					return domain.Issue{
-						Title: "Test Issue",
-						Body:  "Test Body",
-					}, nil
+				GetIssueContentFromEditorFunc: func(issue *domain.Issue) error {
+					issue.Title = "Test Issue"
+					issue.Body = "Test Body"
+					return nil
 				},
 			},
 			clientStub: &stubs.ClientStub{
-				MakeRequestFunc: func(method, url string, data interface{}) ([]byte, error) {
+				MakeRequestFunc: func(method, url string, data *domain.Issue) ([]byte, error) {
 					return []byte{}, domain.ErrApi
 				},
 			},
