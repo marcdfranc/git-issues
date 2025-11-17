@@ -1,6 +1,9 @@
 package domain
 
-const ConfigFile = ".ghissuescli"
+const (
+	ConfigFile = ".ghissuescli"
+	ApiBaseUrl = "https://api.github.com"
+)
 
 type Config struct {
 	Token      string `json:"token"`
