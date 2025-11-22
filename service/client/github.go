@@ -74,7 +74,11 @@ func (s *Service) MakeRequest(method, url string, data *domain.Issue) ([]byte, e
 		var errorResponse struct {
 			Message string `json:"message"`
 		}
-		json.Unmarshal(body, &errorResponse)
+		err := json.Unmarshal(body, &errorResponse)
+		if err != nil {
+			err = fmt.Errorf(errStr, err)
+			return nil, errors.Join(err, domain.ErrRequest)
+		}
 		err = fmt.Errorf("GitHub api error Status:%d\n response error: %s", resp.StatusCode, errorResponse.Message)
 		return nil, errors.Join(err, domain.ErrApi)
 	}

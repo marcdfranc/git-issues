@@ -6,6 +6,7 @@ import (
 	"strconv"
 
 	"git-issues/application"
+	"git-issues/domain"
 	"git-issues/features/conf"
 	"git-issues/features/help"
 	"git-issues/features/issue"
@@ -32,7 +33,7 @@ func main() {
 		return
 	}
 
-	config, err := application.LoadConfig()
+	config, err := application.LoadConfig(domain.ConfigFile)
 	if err != nil {
 		fmt.Printf("could not load conf: %v\n", err)
 		fmt.Println("please run 'git_issues init' to configure.")

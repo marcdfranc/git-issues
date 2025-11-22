@@ -7,8 +7,8 @@ import (
 	"git-issues/domain"
 )
 
-func LoadConfig() (*domain.Config, error) {
-	data, err := os.ReadFile(domain.ConfigFile)
+func LoadConfig(filePath string) (*domain.Config, error) {
+	data, err := os.ReadFile(filePath)
 	if err != nil {
 		return nil, err
 	}

@@ -23,17 +23,24 @@ func TestMakeGitHubRequest_Success(t *testing.T) {
 	// Mock HTTP server
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusOK)
-		w.Write(want)
+		if _, err := w.Write(want); err != nil {
+			t.Fatalf("failed to write response: %v", err)
+		}
 	})
 	server := httptest.NewServer(handler)
 	defer server.Close()
 
 	service := New(defaultConfig)
 
-	data := map[string]string{"example": "value"}
+	data := domain.Issue{
+		Number: 0,
+		Title:  "",
+		Body:   "",
+		State:  "",
+	}
 
 	// Act
-	got, err := service.MakeRequest(http.MethodPost, server.URL, data)
+	got, err := service.MakeRequest(http.MethodPost, server.URL, &data)
 
 	// Assert
 	if err != nil {
@@ -48,7 +55,9 @@ func TestMakeGitHubRequest_Errors(t *testing.T) {
 	// Arrange
 	handler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte(`{"message":"bad request"}`))
+		if _, err := w.Write([]byte(`{"message":"bad request"}`)); err != nil {
+			t.Fatalf("failed to write response: %v", err)
+		}
 	})
 	server := httptest.NewServer(handler)
 	defer server.Close()
@@ -56,7 +65,7 @@ func TestMakeGitHubRequest_Errors(t *testing.T) {
 	type args struct {
 		method string
 		url    string
-		data   interface{}
+		data   *domain.Issue
 	}
 
 	tests := []struct {
@@ -64,15 +73,6 @@ func TestMakeGitHubRequest_Errors(t *testing.T) {
 		args args
 		want error
 	}{
-		{
-			name: "when malformed data received",
-			args: args{
-				method: http.MethodPost,
-				url:    "http://example.com",
-				data:   make(chan int),
-			},
-			want: domain.ErrEncoding,
-		},
 		{
 			name: "when malformed request received",
 			args: args{
@@ -107,6 +107,35 @@ func TestMakeGitHubRequest_Errors(t *testing.T) {
 		})
 	}
 
+}
+
+func TestMakeGitHubRequest_CreateRequestError(t *testing.T) {
+	service := New(defaultConfig)
+
+	// invalid method to trigger request creation error
+	_, err := service.MakeRequest("\x00BAD", "http://example.com", nil)
+	if !errors.Is(err, domain.ErrCreateRequest) {
+		t.Errorf("expected ErrCreateRequest, got %v", err)
+	}
+}
+
+func TestMakeGitHubRequest_ReadBodyError(t *testing.T) {
+	service := New(defaultConfig)
+
+	// Mock HTTP server that closes connection abruptly
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		conn, _, _ := w.(http.Hijacker).Hijack()
+		err := conn.Close() // close connection immediately
+		if err != nil {
+			t.Fatalf("failed to close connection: %v", err)
+		}
+	}))
+	defer server.Close()
+
+	_, err := service.MakeRequest(http.MethodGet, server.URL, nil)
+	if err == nil {
+		t.Errorf("expected error on reading body, got nil")
+	}
 }
 
 var (

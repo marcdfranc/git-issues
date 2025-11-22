@@ -12,8 +12,6 @@ import (
 	"git-issues/domain"
 )
 
-const apiBaseUrl = "https://api.github.com"
-
 type Conf interface {
 	Init() error
 	GetConfig() (*domain.Config, error)
@@ -72,7 +70,7 @@ func (f *Feature) Init() error {
 		Owner:      owner,
 		Repo:       repo,
 		Editor:     editor,
-		APIBaseURL: apiBaseUrl,
+		APIBaseURL: domain.ApiBaseUrl,
 	}
 
 	configData, err := json.MarshalIndent(config, "", "  ")
