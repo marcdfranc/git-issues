@@ -76,7 +76,7 @@ Example `config.json`:
 }
 ```
 - ***token:*** GitHub personal access token (or set via environment variable if supported).
-- ***owner:*** repository owner or organization.
+- ***owner:*** repository owner or organization (only the username, don't use the complete email).
 - ***repo:*** repository name.
 - ***editor:*** command used to open the editor for issue title/body (e.g. code, notepad, vim).
 

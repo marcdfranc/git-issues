@@ -11,12 +11,3 @@ var (
 		APIBaseURL: domain.ApiBaseUrl,
 	}
 )
-
-/*var tt = domain.Config{
-	Token:      "loadToken",
-	Owner:      "loadOwner",
-	Repo:       "loadRepo",
-	Editor:     "loadEditor",
-	APIBaseURL: apiBaseUrl,
-}
-*/
