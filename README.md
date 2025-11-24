@@ -3,6 +3,8 @@
 A CLI client to manage GitHub issues.  
 Exercise from "The Go Programming Language" (chapter 4, exercise 11). Provides commands to create, list, view, update and close issues.
 
+![Go Version](https://img.shields.io/badge/Go-1.16%2B-blue)
+![License](https://img.shields.io/badge/License-MIT-green)
 
 ## Table of Contents
 
@@ -32,6 +34,10 @@ Exercise from "The Go Programming Language" (chapter 4, exercise 11). Provides c
 
 Verify Go is installed:
 
+```bash
+go version
+```
+
 ## Install & Build
 
 Clone and prepare the project:
@@ -52,21 +58,15 @@ Run without building:
 go run main.go
 ```
 
-or, if entrypoint is in cmd:
-
-```bachh
-go run ./cmd/ghissues
-```
-
 ## Configuration
 
-The `init` command interactively collects configuration (GitHub token, repository owner, repository name, preferred editor) and saves it to a configuration file. You can also create a `config.json` file manually.
+The `init` command interactively collects configuration (GitHub token, repository owner, repository name, preferred editor) and saves it to a configuration file. You can also create a `.ghissuescli` file manually.
 
 ```bash
 ./ghissues init
 ```
 
-Example `config.json`:
+Example `.ghissuescli`:
 ```json
 {
   "token": "YOUR_GITHUB_TOKEN",
@@ -80,7 +80,7 @@ Example `config.json`:
 - ***repo:*** repository name.
 - ***editor:*** command used to open the editor for issue title/body (e.g. code, notepad, vim).
 
-Place `config.json` in the working directory or the path expected by the application.
+Place `.ghissuescli` in the working directory or the path expected by the application.
 
 ## Usage
 
@@ -97,11 +97,31 @@ example:
 
 ```bash
 ./ghissues init
+```
+
+```bash
 ./ghissues create
+```
+
+```bash
 ./ghissues list
+```
+
+```bash
 ./ghissues view 12
+```
+
+```bash
 ./ghissues close 12
 ```
+sample of `list` output:
+
+```text
+#12 Fix login bug (open)
+#11 Add dark mode (closed)
+#10 Improve README (open)
+```
+
 
 ## Testing
 
@@ -114,36 +134,63 @@ go test ./...
 ## Repository Layout
 
 ```
-git-issues/
-├── application/              
-│   └── config.go
-├── domain/           
-│   ├── config.go         # Configuration definitions
-│   ├── errors.go         # errors definitions
-│   └── issue.go          # Issue definitions
-├── features/
-│   ├──conf/
-│   │  └── init.go  # Configuration service
-│   │  └── init_test.go # Configuration service tests
-│   ├──help/
-│   │  └── view.go  # Help service
-│   │  └── help_test.go # Help service tests
-│   ├──issue/
-│   │  └── create.go      # Create issue service
-│   │  └── create_test.go # Create issue service tests
-│   │  └── list.go        # List issues service
-│   │  └── list_test.go   # List issues service tests
-│   │  └── view.go        # View issue service
-│   │  └── view_test.go   # View issue service tests
-│   │  └── update.go      # Update issue service
-│   │  └── update_test.go # Update issue service tests
-│   │  └── close.go       # Close issue service
-│   │  └── close_test.go  # Close issue service tests
-├── service/
-├── tests/              # Test data and utilities
-├── go.mod              # Go module file
-├── go.sum              # Go module checksums
-└── README.md           # Project documentation
+git-issues
+│   .gitignore
+│   Dockerfile
+│   ghissues
+│   go.mod
+│   LICENSE
+│   main.go
+│   README.md
+│
+├───application
+│       config.go
+│       config_test.go
+│       
+├───domain
+│       config.go
+│       errors.go
+│       issues.go
+│       
+├───features
+│   ├───conf
+│   │       init.go
+│   │       init_test.go
+│   │       
+│   ├───help
+│   │       view.go
+│   │       
+│   └───issue
+│           close.go
+│           close_test.go
+│           common.go
+│           create.go
+│           create_test.go
+│           list.go
+│           list_test.go
+│           print.go
+│           print_test.go
+│           update.go
+│           update_test.go
+│           view.go
+│           view_test.go
+│           
+├───service
+│   ├───client
+│   │       github.go
+│   │       github_test.go
+│   │       
+│   └───editor
+│           editor.go
+│           editor_test.go
+│           
+└───testdata
+    ├───data
+    │       data.go
+    │       
+    └───stubs
+            serviceclient.go
+            serviceeditor.go
 ```
 
 ## Contributing
@@ -157,11 +204,10 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 ## Maintainers
 
-- Maintainer: Marcelo de Oliveira Francisco (`marcdfranc@gmail.com` ou `@marcdfranc` no GitHub)
+- Maintainer: Marcelo de Oliveira Francisco (`marcdfranc@gmail.com` / `@marcdfranc` on GitHub)
 
 ## Troubleshooting
 
-- Invalid token: verify `config.json` or environment variable contains a valid token.
-- Permission errors: ensure token has correct scopes for the target repository.
-- Editor not found: set editor in `config.json` to a command available in PATH (Windows: `notepad` or `code`).
-
+- Invalid token: Check if `.ghissues` was created and contains a valid token.
+- Permission errors: Ensure the token is correctly scoped to the target repository.
+- Editor not found: configure the editor in `.ghissues` to a command available in PATH (Windows: `notepad` or `code`), prefer to use the application's init command instead of directly editing the file.
